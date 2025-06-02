@@ -90,7 +90,7 @@ class TemplateChildImage implements TemplateChild {
   @override
   // TODO: implement visible
   bool visible;
-  String uri;
+  String? uri;
   double width;
   double height;
 

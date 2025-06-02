@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:ffi';
+import 'dart:io';
 // import 'dart:nativewrappers/_internal/vm/lib/typed_data_patch.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -39,32 +41,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
   final TextEditingController textFieldController = TextEditingController();
   final textController = TextEditingController(text: '#2F19DB');
   ScreenshotController screenshotController = ScreenshotController();
-  Template template = Template(1, "Title", [
-    TemplateChildText('a', 10, 100, 0, TemplateType.text, true, "Lorem ipsum",
-        "#123abc", 13, "Arial"),
-    TemplateChildText('b', 20, 50, 0, TemplateType.text, true, "Text2",
-        "#123def", 20, "Roboto"),
-    TemplateChildImage(
-        'c',
-        20,
-        50,
-        0,
-        TemplateType.image,
-        true,
-        'https://flutter.github.io/assets-for-api-docs/assets/widgets/owl.jpg',
-        60,
-        40),
-    TemplateChildImage(
-        'd',
-        120,
-        150,
-        0,
-        TemplateType.image,
-        true,
-        'https://flutter.github.io/assets-for-api-docs/assets/widgets/owl.jpg',
-        60,
-        40)
-  ]);
+  Template template = Template(1, "Title", []);
+  final picker = ImagePicker();
 
   void _updatePosition(TemplateChild child, Offset localPosition) {
     double elementX = initialPositionX + (localPosition.dx - selectedElementX);
@@ -242,6 +220,11 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            // Center(
+            //   child: _image == null
+            //       ? Text('No Image selected')
+            //       : Image.file(_image!),
+            // ),
             Screenshot(
               controller: screenshotController,
               child: SizedBox(
@@ -280,7 +263,12 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     });
   }
 
-  onAddImage() {}
+  onAddImage() {
+    setState(() {
+      template.children.add(TemplateChildImage(
+          Uuid().v6(), 120, 150, 0, TemplateType.image, true, null, 60, 40));
+    });
+  }
 
   Future<dynamic> ShowCapturedWidget(
       BuildContext context, Uint8List capturedImage) {
@@ -318,29 +306,40 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
 
   Widget addElement(TemplateChild child) {
     if (child is TemplateChildImage) {
-      return SizedBox(
-        width: child.width,
-        height: child.height,
-        child: Stack(children: [
-          FittedBox(
-            fit: BoxFit.fill,
-            child: Container(
-              width: child.width,
-              height: child.height,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(child.uri),
-                  fit: BoxFit.cover, // Change this to fit the container
+      return GestureDetector(
+        onDoubleTap: () {
+          setState(() {
+            _selectedItem = child;
+          });
+          openBottomSheetImage();
+        },
+        child: SizedBox(
+          width: child.width,
+          height: child.height,
+          child: Stack(children: [
+            FittedBox(
+              fit: BoxFit.fill,
+              child: Container(
+                width: child.width,
+                height: child.height,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: child.uri != null
+                        ? Image.file(File(child!.uri!)).image
+                        : Image(image: AssetImage('assets/placeholder.png'))
+                            .image,
+                    fit: BoxFit.cover, // Change this to fit the container
+                  ),
                 ),
               ),
             ),
-          ),
-          resizer(0, 0, child, CornerEdge.topLeft),
-          resizer(child.height - 10, child.width - 10, child,
-              CornerEdge.bottomRight),
-          resizer(0, child.width - 10, child, CornerEdge.topRight),
-          resizer(child.height - 10, 0, child, CornerEdge.bottomLeft),
-        ]),
+            resizer(0, 0, child, CornerEdge.topLeft),
+            resizer(child.height - 10, child.width - 10, child,
+                CornerEdge.bottomRight),
+            resizer(0, child.width - 10, child, CornerEdge.topRight),
+            resizer(child.height - 10, 0, child, CornerEdge.bottomLeft),
+          ]),
+        ),
       );
     } else if (child is TemplateChildText) {
       return GestureDetector(
@@ -349,14 +348,14 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
           setState(() {
             _selectedItem = child;
           });
-          openBottomSheet();
+          openBottomSheetText();
         },
         onLongPress: () {
           print(child);
           setState(() {
             _selectedItem = child;
           });
-          openBottomSheet();
+          openBottomSheetText();
         },
         child:
 
@@ -375,7 +374,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     }
   }
 
-  openBottomSheet() {
+  openBottomSheetText() {
     const List<String> list = <String>[
       "10",
       "11",
@@ -548,6 +547,44 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     ).whenComplete(onBottomSheetClosed);
   }
 
+  openBottomSheetImage() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) {
+        const kCreateStoryTextFieldStyle = TextStyle(
+          fontSize: 14.0,
+          fontWeight: FontWeight.normal,
+          color: Colors.white,
+          fontFamily: 'Bekind',
+        );
+        return Container(
+          height: 200,
+          color: Colors.amber,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: showOptions,
+                          child: const Text("Select Image"),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    ).whenComplete(onBottomSheetClosed);
+  }
+
   void copyToClipboard(String input) {
     String textToCopy = input.replaceFirst('#', '').toUpperCase();
     if (textToCopy.startsWith('FF') && textToCopy.length == 8) {
@@ -580,6 +617,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
 
   void changeColor(Color color) => setState(() => ());
 
+  ///https://itchybumr.medium.com/flutter-tutorial-image-picker-picking-photos-from-camera-or-photo-gallery-5243a5eff6b4
+  ///https://pub.dev/packages/image_picker
   Widget resizer(double top, double left, TemplateChildImage child,
       CornerEdge cornerEdge) {
     if (!_hideWidget) {
@@ -609,6 +648,71 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     } else {
       return SizedBox(width: 0.0, height: 0.0);
     }
+  }
+
+//Image Picker function to get image from gallery
+  Future getImageFromGallery() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    setState(() {
+      if (pickedFile != null) {
+        // TemplateChildImage element =
+        //     template.children.firstWhere((element) => element.id == elementId)
+        //         as TemplateChildImage;
+        // element.height = height;
+        // element.width = width;
+        // if (_image?.uri != null) {
+        template.children
+            .whereType<TemplateChildImage>()
+            // .map((e) => e as TemplateChildImage)
+            .firstWhere((element) => element.id == _selectedItem?.id)
+            .uri = pickedFile.path; //_image!.uri.toString();
+        // }
+      }
+    });
+  }
+
+//Image Picker function to get image from camera
+  Future getImageFromCamera() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+
+    setState(() {
+      if (pickedFile != null) {
+        template.children
+            .whereType<TemplateChildImage>()
+            // .map((e) => e as TemplateChildImage)
+            .firstWhere((element) => element.id == _selectedItem?.id)
+            .uri = pickedFile.path;
+      }
+    });
+  }
+
+  Future showOptions() async {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        actions: [
+          CupertinoActionSheetAction(
+            child: Text('Photo Gallery'),
+            onPressed: () {
+              // close the options modal
+              Navigator.of(context).pop();
+              // get image from gallery
+              getImageFromGallery();
+            },
+          ),
+          CupertinoActionSheetAction(
+            child: Text('Camera'),
+            onPressed: () {
+              // close the options modal
+              Navigator.of(context).pop();
+              // get image from camera
+              getImageFromCamera();
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 
