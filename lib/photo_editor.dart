@@ -13,6 +13,10 @@ import 'package:photo_editor/templates.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
+// https://pub.dev/packages/flutter_image_filters
+// https://img.ly/blog/how-to-add-stickers-and-overlays-to-a-video-in-flutter-test/
+// https://github.com/nataliakzm/Applying_Filters_and_Effects_to_Images_Flutter/tree/main
+
 enum CornerEdge { topLeft, topRight, bottomLeft, bottomRight }
 
 class PhotoEditorPage extends StatefulWidget {
@@ -516,7 +520,6 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                       style: kCreateStoryTextFieldStyle,
                       focusNode: _focusNode,
                       onSubmitted: (value) {
-                        print('----------Ref Code Submitted');
                         setState(() {
                           _focusNode.unfocus();
                         });
@@ -534,8 +537,11 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.0),
                           ),
-                          labelText:
-                              'Update your text'), //(_selectedItem as TemplateChildText).text),
+                          labelText: 'Update your text'),
+                    ),
+                    TextButton(
+                      onPressed: removeItem,
+                      child: const Text("Remove"),
                     ),
                   ],
                 )
@@ -573,6 +579,10 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                           onPressed: showOptions,
                           child: const Text("Select Image"),
                         ),
+                        TextButton(
+                          onPressed: removeItem,
+                          child: const Text("Remove"),
+                        ),
                       ],
                     ),
                   ],
@@ -590,8 +600,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     if (textToCopy.startsWith('FF') && textToCopy.length == 8) {
       textToCopy = textToCopy.replaceFirst('FF', '');
     }
-    print(textToCopy);
-    // Clipboard.setData(ClipboardData(text: '#$textToCopy'));
+
     setState(() {
       template.children
           .whereType<TemplateChildText>()
@@ -607,18 +616,8 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     });
   }
 
-  // void changeColor(Color color) => setState(() => {
-  //       template.children
-  //           .whereType<TemplateChildText>()
-  //           .firstWhere((element) => element.id == _selectedItem?.id)
-  //           .color = "#" + color.toHexString(),
-  //       // Navigator.pop(context)
-  //     });
-
   void changeColor(Color color) => setState(() => ());
 
-  ///https://itchybumr.medium.com/flutter-tutorial-image-picker-picking-photos-from-camera-or-photo-gallery-5243a5eff6b4
-  ///https://pub.dev/packages/image_picker
   Widget resizer(double top, double left, TemplateChildImage child,
       CornerEdge cornerEdge) {
     if (!_hideWidget) {
@@ -646,45 +645,30 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
         ),
       );
     } else {
-      return SizedBox(width: 0.0, height: 0.0);
+      return const SizedBox(width: 0.0, height: 0.0);
     }
   }
 
-//Image Picker function to get image from gallery
-  Future getImageFromGallery() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    setState(() {
-      if (pickedFile != null) {
-        // TemplateChildImage element =
-        //     template.children.firstWhere((element) => element.id == elementId)
-        //         as TemplateChildImage;
-        // element.height = height;
-        // element.width = width;
-        // if (_image?.uri != null) {
-        template.children
-            .whereType<TemplateChildImage>()
-            // .map((e) => e as TemplateChildImage)
-            .firstWhere((element) => element.id == _selectedItem?.id)
-            .uri = pickedFile.path; //_image!.uri.toString();
-        // }
-      }
-    });
-  }
-
-//Image Picker function to get image from camera
-  Future getImageFromCamera() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+  Future getImageFromSource(ImageSource imageSource) async {
+    final pickedFile = await picker.pickImage(source: imageSource);
 
     setState(() {
       if (pickedFile != null) {
         template.children
             .whereType<TemplateChildImage>()
-            // .map((e) => e as TemplateChildImage)
             .firstWhere((element) => element.id == _selectedItem?.id)
             .uri = pickedFile.path;
       }
     });
+  }
+
+  Future removeItem() async {
+    setState(() {
+      template.children
+          .removeWhere((element) => element.id == _selectedItem?.id);
+      _selectedItem = null;
+    });
+    Navigator.of(context).pop();
   }
 
   Future showOptions() async {
@@ -693,21 +677,21 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
       builder: (context) => CupertinoActionSheet(
         actions: [
           CupertinoActionSheetAction(
-            child: Text('Photo Gallery'),
+            child: const Text('Photo Gallery'),
             onPressed: () {
               // close the options modal
               Navigator.of(context).pop();
               // get image from gallery
-              getImageFromGallery();
+              getImageFromSource(ImageSource.gallery);
             },
           ),
           CupertinoActionSheetAction(
-            child: Text('Camera'),
+            child: const Text('Camera'),
             onPressed: () {
               // close the options modal
               Navigator.of(context).pop();
               // get image from camera
-              getImageFromCamera();
+              getImageFromSource(ImageSource.camera);
             },
           ),
         ],
@@ -715,38 +699,6 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     );
   }
 }
-
-/// Template
-/// -list of elements that are template children
-/// each element has common properties eg.position (x,y), visible, type (text for image), other properties for each type
-///
-/// example:
-/// Template01
-///
-/// element01 position X:0 Y:0
-/// visible: true
-/// rotation: 0
-/// type: Text
-/// text: "Lorem ipsum"
-/// color: 0xfffa12ab
-/// size: 13 dp
-/// fontFamily: RobotoRegular
-///
-/// element02 position X:20 Y:10
-/// visible: true
-/// rotation: 0
-/// type: Image
-/// uri: "localDirectory"
-/// size: width:  height:
-///
-/// element03 position X:0 Y:0
-/// visible: true
-/// rotation: 0
-/// type: Text
-/// text: "Lorem ipsum"
-/// color: 0xfffa12ab
-/// size: 13 dp
-/// fontFamily: RobotoRegular
 
 extension ColorExtension on String {
   convertToColor() {
