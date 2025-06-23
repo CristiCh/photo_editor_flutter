@@ -12,6 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:photo_editor/templates.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:flutter_image_filters/flutter_image_filters.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 
 // https://pub.dev/packages/flutter_image_filters
 // https://img.ly/blog/how-to-add-stickers-and-overlays-to-a-video-in-flutter-test/
@@ -583,6 +586,10 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
                           onPressed: removeItem,
                           child: const Text("Remove"),
                         ),
+                        TextButton(
+                          onPressed: applyFilter,
+                          child: const Text("Filter"),
+                        ),
                       ],
                     ),
                   ],
@@ -669,6 +676,34 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
       _selectedItem = null;
     });
     Navigator.of(context).pop();
+  }
+
+  Future applyFilter() async {
+    final uri = (_selectedItem as TemplateChildImage).uri;
+    final file = File(uri!);
+    final texture = await TextureSource.fromFile(file);
+    final configuration = BrightnessShaderConfiguration();
+    configuration.brightness = 0.1;
+    final image = await configuration.export(texture, texture.size);
+    final directory = await getTemporaryDirectory();
+    final output = File('${directory.path}/result.jpeg');
+    final bytes = await image.toByteData();
+    // final persistedImage = img.Image.fromBytes(
+    //   15,
+    //   image.height,
+    //   bytes!.buffer.asUint8List(),
+    // );
+    final persistedImage = img.Image.fromBytes(
+        width: image.width, height: image.height, bytes: bytes!.buffer!);
+    img.JpegEncoder encoder = img.JpegEncoder();
+    final data = encoder.encode(persistedImage); //encodeImage(persistedImage);
+    await output.writeAsBytes(data);
+    setState(() {
+      template.children
+          .whereType<TemplateChildImage>()
+          .firstWhere((element) => element.id == _selectedItem?.id)
+          .uri = output.path;
+    });
   }
 
   Future showOptions() async {
