@@ -679,6 +679,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
   }
 
   Future applyFilter() async {
+    final selectedId = _selectedItem?.id;
     final uri = (_selectedItem as TemplateChildImage).uri;
     final file = File(uri!);
     final texture = await TextureSource.fromFile(file);
@@ -701,7 +702,7 @@ class _PhotoEditorPageState extends State<PhotoEditorPage> {
     setState(() {
       template.children
           .whereType<TemplateChildImage>()
-          .firstWhere((element) => element.id == _selectedItem?.id)
+          .firstWhere((element) => element.id == selectedId)
           .uri = output.path;
     });
   }
