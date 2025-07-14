@@ -3,6 +3,7 @@ on:
   push:
     tags:
       - release.**
+      - test.**
 
 jobs:
   build:
@@ -10,15 +11,28 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        
       - name: set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'adopt'
           cache: gradle
-#      - name: Grant execute permission for gradlew
-#        run: chmod +x gradlew
-#      - name: Build with Gradle
-#        run: ./gradlew build
-      - name: Test
-        run: echo 'Hello Test'
+          
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.1'  # You can change this to match your version
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build
+        run: flutter build apk --release
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
