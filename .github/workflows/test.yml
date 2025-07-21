@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: 📉 Run all app tests
+        run: flutter test
+
       - name: Build
         run: flutter build apk --release
 
@@ -36,3 +39,12 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Build aab
+        run: flutter build appbundle --release
+
+      - name: Upload Release AAB
+        uses: actions/upload-artifact@v4
+        with:
+            name: release-aab
+            path: build/app/outputs/bundle/release/app-release.aab
