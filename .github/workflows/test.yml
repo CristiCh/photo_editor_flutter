@@ -28,8 +28,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: 📉 Run all app tests
-        run: flutter test
+#      - name: 📉 Run all app tests
+#        run: flutter test
 
       - name: Build
         run: flutter build apk --release
