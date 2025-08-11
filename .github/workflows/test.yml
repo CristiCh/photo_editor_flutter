@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AAB_PATH: build/app/outputs/bundle/release/app-release.aab
+      KEYSTORE_PATH: android/upload-keystore.jks
+      KEY_PROPS_PATH: android/keystore.properties
       SERVICE_ACCOUNT_PATH: store_credentials.json
     steps:
       - name: Checkout repository
@@ -33,6 +35,12 @@ jobs:
 
 #      - name: 📉 Run all app tests
 #        run: flutter test
+
+      - name: Decode Android keystore
+        run: echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > ${{ env.KEYSTORE_PATH }}
+
+      - name: Decode Android key properties
+        run: echo "${{ secrets.KEYSTORE_PROPERTIES }}" | base64 --decode > ${{ env.KEY_PROPS_PATH }}
 
       - name: Decode Android Service Account
         run: echo "${{ secrets.SERVICE_ACCOUNT_JSON }}" | base64 --decode > ${{ env.SERVICE_ACCOUNT_PATH }}
@@ -59,6 +67,6 @@ jobs:
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: ${{ env.SERVICE_ACCOUNT_PATH }}
-          packageName: com.yourapp.package
+          packageName: com.cristis.photoeditor.photo_editor
           releaseFiles: ${{ env.AAB_PATH }}
           track: internal
