@@ -53,12 +53,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: release-aab
-            path: { { env.AAB_PATH } }
+            path: ${{ env.AAB_PATH }}
 
       - name: Publish to PlayStore
         uses: r0adkll/upload-google-play@v1
         with:
-          serviceAccountJson: { { env.SERVICE_ACCOUNT_PATH } }
+          serviceAccountJson: ${{ env.SERVICE_ACCOUNT_PATH }}
           packageName: com.yourapp.package
-          releaseFiles: { { env.AAB_PATH } }
+          releaseFiles: ${{ env.AAB_PATH }}
           track: internal
