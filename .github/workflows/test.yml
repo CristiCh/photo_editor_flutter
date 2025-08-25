@@ -63,10 +63,10 @@ jobs:
             name: release-aab
             path: ${{ env.AAB_PATH }}
 
-#      - name: Publish to PlayStore
-#        uses: r0adkll/upload-google-play@v1
-#        with:
-#          serviceAccountJson: ${{ env.SERVICE_ACCOUNT_PATH }}
-#          packageName: com.cristis.photoeditor.photo_editor
-#          releaseFiles: ${{ env.AAB_PATH }}
-#          track: internal
+      - name: Publish to PlayStore
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: ${{ env.SERVICE_ACCOUNT_PATH }}
+          packageName: com.cristis.photoeditor.photo_editor
+          releaseFiles: ${{ env.AAB_PATH }}
+          track: internal
